@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>স্টোরিবোর্ড জেনারেটর (Storyboard Generator)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- JSZip Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        /* Custom scrollbar for slate theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-4 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-clapperboard text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        AI স্টোরিবোর্ড ক্রিয়েটর
+                    </h1>
+                    <p class="text-xs text-slate-400">স্ক্রিপ্ট থেকে অটোমেটিক দৃশ্য ও ছবি তৈরি করুন</p>
+                </div>
+            </div>
+            <!-- API Key Status (Hidden input, handled internally but kept for robustness) -->
+            <div class="flex items-center gap-2 text-xs bg-slate-800 px-3 py-1.5 rounded-full text-slate-300">
+                <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                <span>Gemini & Imagen API রেডি</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:py-8 space-y-8">
+        
+        <!-- Script and Preset Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left inputs (2 cols on large screen) -->
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-file-lines text-indigo-400"></i>
+                        আপনার সম্পূর্ণ স্ক্রিপ্ট এখানে পেস্ট করুন
+                    </label>
+                    <button id="clearScriptBtn" class="text-xs text-slate-400 hover:text-rose-400 transition">
+                        <i class="fa-solid fa-trash-can mr-1"></i> ক্লিয়ার করুন
+                    </button>
+                </div>
+                <textarea id="scriptInput" rows="10" 
+                    placeholder="যেমনঃ দৃশ্য ১: একটি অন্ধকার জঙ্গল। সুজন সাবধানে হাঁটছে, তার হাতে একটি মশাল। হঠাৎ পেছনে খসখস শব্দ শোনা গেল। সে চমকে পেছনে তাকাল..."
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-base leading-relaxed resize-none"></textarea>
+                
+                <div class="text-xs text-indigo-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>সহজ ফলাফলের জন্য স্ক্রিপ্টটিকে কয়েকটি প্যারোগ্রাফ বা দৃশ্যে ভাগ করে লিখুন।</span>
+                </div>
+            </div>
+
+            <!-- Right settings (1 col) -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col justify-between space-y-6">
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i>
+                        আর্ট স্টাইল প্রিসেট
+                    </h3>
+                    <p class="text-xs text-slate-400">স্টোরিবোর্ডের ছবির জন্য আপনার পছন্দের ভিজ্যুয়াল থিম সিলেক্ট করুন:</p>
+                    
+                    <div class="grid grid-cols-2 gap-2 max-h-[250px] overflow-y-auto pr-1" id="presetsContainer">
+                        <!-- Presets dynamically loaded here -->
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button id="generateBtn" 
+                    class="w-full py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 active:scale-[0.98] transition flex items-center justify-center gap-2 text-lg">
+                    <i class="fa-solid fa-gears animate-spin-slow"></i>
+                    Generate Storyboard
+                </button>
+            </div>
+        </section>
+
+        <!-- Dynamic Status & Progress Section (Hidden initially) -->
+        <section id="statusPanel" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h3 id="statusTitle" class="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-spinner animate-spin text-indigo-400"></i>
+                        স্ক্রিপ্ট প্রসেসিং শুরু হচ্ছে...
+                    </h3>
+                    <p id="statusDesc" class="text-xs text-slate-400">অপেক্ষা করুন, এআই আপনার স্ক্রিপ্ট বিশ্লেষণ করে দৃশ্যগুলো সাজাচ্ছে।</p>
+                </div>
+                <span id="progressPercentage" class="text-sm font-bold text-indigo-400 bg-indigo-950/50 border border-indigo-900/50 px-3 py-1 rounded-full">0%</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
+                <div id="progressBar" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+
+            <!-- Detailed logs inside status panel -->
+            <div id="statusLog" class="text-xs font-mono text-slate-400 max-h-[100px] overflow-y-auto bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1">
+                <div>[System] স্টোরিবোর্ড জেনারেশন প্রসেস শুরু করার জন্য প্রস্তুত।</div>
+            </div>
+        </section>
+
+        <!-- Warnings & Failures Panel (Hidden initially) -->
+        <section id="errorPanel" class="hidden bg-rose-950/20 border border-rose-900/50 rounded-2xl p-5 shadow-xl space-y-3">
+            <h4 class="text-rose-400 font-semibold flex items-center gap-2 text-sm sm:text-base">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                কিছু দৃশ্যের ছবি তৈরিতে ত্রুটি দেখা দিয়েছে:
+            </h4>
+            <ul id="errorList" class="list-disc list-inside text-xs text-rose-300 space-y-1">
+                <!-- Failures listed here -->
+            </ul>
+            <p class="text-[11px] text-slate-400">টিপস: আপনি নিচে "Download ZIP" বাটন ব্যবহার করে সফলভাবে জেনারেট হওয়া ছবিগুলো ডাউনলোড করে নিতে পারেন।</p>
+        </section>
+
+        <!-- Results / Storyboard Preview Section (Hidden initially) -->
+        <section id="resultsSection" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-rectangle-list text-pink-500"></i>
+                        জেনারেট হওয়া স্টোরিবোর্ড
+                    </h2>
+                    <p class="text-xs text-slate-400">প্রতিটি দৃশ্য এবং সংশ্লিষ্ট জেনারেটেড ছবি নিচে সাজানো রয়েছে।</p>
+                </div>
+                
+                <!-- Download button -->
+                <button id="downloadZipBtn" disabled
+                    class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-emerald-950/20 active:scale-[0.98] transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-file-zipper"></i>
+                    Download ZIP
+                </button>
+            </div>
+
+            <!-- Grid container for generated scenes -->
+            <div id="storyboardGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Storyboard cards dynamically appended here -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 space-y-2">
+            <p>© 2026 AI Storyboard Creator. All images generated by Imagen 4.0 & Structured with Gemini 2.5.</p>
+            <p class="text-[10px] text-slate-600">Note: This is a standalone secure client-side app. It uses standard internal authentication token when available.</p>
+        </div>
+    </footer>
+
+    <!-- App Logic Scripts -->
+    <script>
+        // API Configurations (Standard fallback empty api-key, environment runtime handles it)
+        const apiKey = "";
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'storyboard-generator';
+
+        // Preset Lists provided in prompt
+        const presets = [
+            { id: "epic-cinematic", name: "Epic Cinematic", promptSuffix: "highly detailed cinematic 8k, epic scale, dramatic movie lighting, depth of field, anamorphic lens" },
+            { id: "anime", name: "Anime", promptSuffix: "modern high-quality anime style, key visual, vivid colors, detailed shading, aesthetic background" },
+            { id: "realistic", name: "Realistic", promptSuffix: "photorealistic, highly detailed 8k photography, hyperrealistic textures, natural dramatic lighting, shot on 35mm" },
+            { id: "3d-animation", name: "3D Animation", promptSuffix: "stylized 3D rendering, octane render style, highly detailed textures, vibrant lights, beautiful depth" },
+            { id: "pixar-style", name: "Pixar Style", promptSuffix: "classic 3d animated movie style, charming characters, emotional facial expressions, soft warm lighting, detailed modeling" },
+            { id: "cartoon", name: "Cartoon", promptSuffix: "expressive modern cartoon style, clean vectors, bold outlines, fun playful design, bright color palette" },
+            { id: "comic-style", name: "Comic Style", promptSuffix: "detailed comic book artwork style, dynamic action poses, ink outlines, halftone patterns, dramatic graphic novel aesthetic" },
+            { id: "fantasy", name: "Fantasy", promptSuffix: "magical fantasy art, ethereal glows, mythical elements, highly detailed digital painting, vibrant magical colors" },
+            { id: "sci-fi", name: "Sci-Fi", promptSuffix: "futuristic science fiction world, advanced holographic tech, neon glow, detailed sci-fi panels, cosmic environment" },
+            { id: "cyberpunk", name: "Cyberpunk", promptSuffix: "cyberpunk aesthetic, neon-lit rainy streets, high tech low life, glowing cybernetics, dark violet and cyan colors" },
+            { id: "ghibli-style", name: "Ghibli Style", promptSuffix: "nostalgic hand-drawn studio ghibli anime style, lush green landscapes, handpainted watercolor details, peaceful cinematic atmosphere" },
+            { id: "disney-style", name: "Disney Style", promptSuffix: "classic modern Disney feature animation style, magical atmosphere, detailed textures, expressive character designs" },
+            { id: "sketch", name: "Sketch", promptSuffix: "expressive pencil drawing sketch, detailed graphite shading, artistic linework, paper texture background" },
+            { id: "watercolor", name: "Watercolor", promptSuffix: "gorgeous watercolor painting, soft paint splatters, blending wet-on-wet colors, beautiful artistic paper texture" },
+            { id: "oil-painting", name: "Oil Painting", promptSuffix: "classical oil on canvas painting, thick textured brush strokes, impasto style, dramatic renaissance lighting, rich pigments" },
+            { id: "pixel-art", name: "Pixel Art", promptSuffix: "detailed retro 16-bit / 32-bit pixel art, pixelated game scene, vibrant restricted color palette, nostalgic vibes" },
+            { id: "horror", name: "Horror", promptSuffix: "spine-chilling horror scene, eerie shadows, dark gothic ambiance, foggy dark backgrounds, pale dramatic moonlight" },
+            { id: "retro", name: "Retro", promptSuffix: "retro vintage aesthetic, vintage camera film grain, warm nostalgic tones, 1970s design style" },
+            { id: "futuristic", name: "Futuristic", promptSuffix: "sleek futurism, clean white structures, advanced sleek designs, beautiful minimalist tech, ambient light" },
+            { id: "manga", name: "Manga", promptSuffix: "japanese manga style drawing, black and white ink sketch, highly detailed screentones, dramatic manga speed lines" },
+            { id: "chibi", name: "Chibi", promptSuffix: "super cute chibi style, small adorable characters, large expressive shiny eyes, simple colorful background" }
+        ];
+
+        // Active State variables
+        let selectedPresetId = "epic-cinematic";
+        let generatedScenes = []; 
+
+        // DOM elements
+        const scriptInput = document.getElementById('scriptInput');
+        const clearScriptBtn = document.getElementById('clearScriptBtn');
+        const presetsContainer = document.getElementById('presetsContainer');
+        const generateBtn = document.getElementById('generateBtn');
+        
+        const statusPanel = document.getElementById('statusPanel');
+        const statusTitle = document.getElementById('statusTitle');
+        const statusDesc = document.getElementById('statusDesc');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const progressBar = document.getElementById('progressBar');
+        const statusLog = document.getElementById('statusLog');
+        
+        const errorPanel = document.getElementById('errorPanel');
+        const errorList = document.getElementById('errorList');
+        
+        const resultsSection = document.getElementById('resultsSection');
+        const storyboardGrid = document.getElementById('storyboardGrid');
+        const downloadZipBtn = document.getElementById('downloadZipBtn');
+
+        // Render Presets
+        function renderPresets() {
+            presetsContainer.innerHTML = '';
+            presets.forEach(preset => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `p-3 rounded-xl border text-left text-xs font-medium transition flex flex-col justify-between gap-1 cursor-pointer ${
+                    selectedPresetId === preset.id 
+                    ? 'bg-indigo-600/25 border-indigo-500 text-indigo-200' 
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`;
+                btn.innerHTML = `
+                    <span>${preset.name}</span>
+                    <i class="fa-solid ${selectedPresetId === preset.id ? 'fa-circle-check text-indigo-400' : 'fa-circle text-slate-700'} text-[10px] self-end"></i>
+                `;
+                btn.addEventListener('click', () => {
+                    selectedPresetId = preset.id;
+                    renderPresets();
+                });
+                presetsContainer.appendChild(btn);
+            });
+        }
+
+        // Setup Event Listeners
+        clearScriptBtn.addEventListener('click', () => {
+            scriptInput.value = '';
+            scriptInput.focus();
+        });
+
+        // Initialize presets
+        renderPresets();
+
+        // Helper: Format names for files safely based on scene names
+        function sanitizeFilename(sceneName, sceneIndex) {
+            // "Scene 01: The Beginning" -> "Scene_01_The_Beginning.png"
+            let sanitized = sceneName
+                .trim()
+                .replace(/[:.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "") // remove special characters
+                .replace(/\s+/g, "_"); // replace spaces with underscore
+            
+            // If the user didn't write "Scene XX" prefix, we prepend it manually for perfect output
+            const padIndex = String(sceneIndex + 1).padStart(2, '0');
+            if (!sanitized.toLowerCase().startsWith('scene')) {
+                sanitized = `Scene_${padIndex}_${sanitized}`;
+            }
+            return `${sanitized}.png`;
+        }
+
+        // Logger function
+        function logStatus(message) {
+            const time = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${time}] ${message}`;
+            statusLog.appendChild(logEntry);
+            statusLog.scrollTop = statusLog.scrollHeight;
+        }
+
+        // Exponential backoff fetch function for reliable API requests
+        async function fetchWithRetry(url, options, retries = 5, delay = 1000) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP Error Status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithRetry(url, options, retries - 1, delay * 2);
+                }
+                throw error;
+            }
+        }
+
+        // Use Gemini to parse script into scene JSON blocks
+        async function parseScriptWithGemini(scriptText) {
+            logStatus("এআই মডেল দিয়ে স্ক্রিপ্ট বিশ্লেষণ করা হচ্ছে...");
+            
+            const systemPrompt = `You are an expert film director and storyboard planner. 
+Your task is to analyze the provided movie/story script and break it down into sequential, highly visual scene descriptions. 
+
+Return your output strictly as a JSON object of scenes. Do not include markdown code block syntax (like \`\`\`json) or any extra conversational text outside the JSON structure.
+
+The response JSON structure must follow this format:
+{
+  "scenes": [
+    {
+      "scene_number": 1,
+      "title": "Scene Title in Bengali",
+      "visual_description": "Extremely detailed description of the physical environment, characters, camera angle, lighting, objects, actions in English. This description must be highly descriptive to be used directly as an image generator prompt.",
+      "text": "The associated dialogue or description in Bengali"
+    }
+  ]
+}
+
+Instructions:
+1. Break down the script into logical scenes. Each scene must be represented by an entry.
+2. The "title" must be concise and descriptive in Bengali.
+3. The "visual_description" MUST be in English. It should translate the visual elements of the Bengali script into high-quality image prompts, describing the lighting, atmosphere, shot types (e.g., close-up, wide shot), and precise scene elements. Do not include characters' subjective feelings; focus only on visible things.
+4. The "text" should be the direct dialogue or narrative description of that scene in Bengali.
+5. Do not skip any part of the script. Provide sequentially arranged scenes representing the entire narrative flow.`;
+
+            const userQuery = `Here is the script to analyze and structure into storyboard scenes:\n\n${scriptText}`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { 
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            scenes: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        scene_number: { type: "INTEGER" },
+                                        title: { type: "STRING" },
+                                        visual_description: { type: "STRING" },
+                                        text: { type: "STRING" }
+                                    },
+                                    required: ["scene_number", "title", "visual_description", "text"]
+                                }
+                            }
+                        },
+                        required: ["scenes"]
+                    }
+                }
+            };
+
+            const data = await fetchWithRetry(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!rawText) {
+                throw new Error("No structured output received from Gemini API.");
+            }
+
+            return JSON.parse(rawText);
+        }
+
+        // Use Imagen 4.0 API to generate visual images per scene
+        async function generateImageWithImagen(visualPrompt, presetSuffix) {
+            const fullPrompt = `${visualPrompt}, ${presetSuffix}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+            
+            const payload = {
+                instances: { prompt: fullPrompt },
+                parameters: { sampleCount: 1 }
+            };
+
+            const data = await fetchWithRetry(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const base64Bytes = data.predictions?.[0]?.bytesBase64Encoded;
+            if (!base64Bytes) {
+                throw new Error("Imagen generation did not return any image bytes.");
+            }
+
+            return `data:image/png;base64,${base64Bytes}`;
+        }
+
+        // Update overall process UI
+        function updateProgress(percentage, currentStepTitle) {
+            progressBar.style.width = `${percentage}%`;
+            progressPercentage.textContent = `${percentage}%`;
+            if (currentStepTitle) {
+                statusTitle.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-indigo-400"></i> ${currentStepTitle}`;
+            }
+        }
+
+        // Render card layouts for scenes
+        function renderSceneCard(scene, index) {
+            const cardId = `scene-card-${index}`;
+            const imgId = `scene-img-${index}`;
+            const spinnerId = `scene-spinner-${index}`;
+            const statusBadgeId = `scene-status-${index}`;
+            const filename = sanitizeFilename(scene.title, index);
+
+            const cardHtml = `
+                <div id="${cardId}" class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg transition duration-300 hover:border-indigo-500/50 flex flex-col">
+                    <!-- Image Container -->
+                    <div class="relative bg-slate-950 aspect-[16/10] flex items-center justify-center overflow-hidden border-b border-slate-800">
+                        <!-- Spinner/Loader overlay -->
+                        <div id="${spinnerId}" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/80 gap-3">
+                            <i class="fa-solid fa-circle-notch animate-spin text-3xl text-indigo-500"></i>
+                            <span class="text-xs text-slate-400">ছবি জেনারেট হচ্ছে...</span>
+                        </div>
+                        
+                        <!-- Image Element -->
+                        <img id="${imgId}" class="w-full h-full object-cover hidden transition duration-300 hover:scale-105" alt="${scene.title}" />
+                    </div>
+
+                    <!-- Meta Data Details -->
+                    <div class="p-5 flex-grow flex flex-col justify-between space-y-4">
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="px-2.5 py-0.5 bg-indigo-950/50 text-indigo-400 text-xs font-bold rounded-full border border-indigo-900/50">
+                                    Scene ${index + 1}
+                                </span>
+                                <span id="${statusBadgeId}" class="text-[10px] uppercase font-bold text-amber-400">
+                                    অপেক্ষমান
+                                </span>
+                            </div>
+                            <h4 class="text-lg font-bold text-slate-100 line-clamp-2">${scene.title}</h4>
+                            <p class="text-sm text-slate-300 leading-relaxed min-h-[48px] line-clamp-3">${scene.text}</p>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-800 space-y-2 text-[11px]">
+                            <div class="flex justify-between items-center text-slate-400">
+                                <span class="font-semibold text-slate-500">File Name:</span>
+                                <span class="font-mono text-indigo-300 truncate max-w-[180px]" title="${filename}">${filename}</span>
+                            </div>
+                            <div class="text-slate-500 line-clamp-2 italic" title="${scene.visual_description}">
+                                <strong>Prompt:</strong> ${scene.visual_description}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            storyboardGrid.insertAdjacentHTML('beforeend', cardHtml);
+        }
+
+        // Trigger Main Action Process
+        generateBtn.addEventListener('click', async () => {
+            const scriptText = scriptInput.value.trim();
+            if (!scriptText) {
+                // User-friendly custom modal warning
+                alertCustom("অনুগ্রহ করে আপনার স্ক্রিপ্টটি টেক্সট বক্সে লিখুন বা পেস্ট করুন।");
+                return;
+            }
+
+            // UI resets
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> প্রসেসিং চলছে...`;
+            
+            statusPanel.classList.remove('hidden');
+            errorPanel.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+            errorList.innerHTML = '';
+            storyboardGrid.innerHTML = '';
+            downloadZipBtn.disabled = true;
+            statusLog.innerHTML = '<div>[System] স্টোরিবোর্ড জেনারেশন প্রসেস শুরু করার জন্য প্রস্তুত।</div>';
+            
+            generatedScenes = [];
+            const failedScenes = [];
+            const activePreset = presets.find(p => p.id === selectedPresetId);
+            const presetSuffix = activePreset ? activePreset.promptSuffix : '';
+
+            try {
+                // Step 1: Script Parsing with Gemini
+                updateProgress(10, "স্ক্রিপ্ট প্রসেসিং শুরু হচ্ছে...");
+                logStatus("স্ক্রিপ্টটি বিশ্লেষণে পাঠানো হচ্ছে...");
+                
+                const parseResults = await parseScriptWithGemini(scriptText);
+                
+                if (!parseResults.scenes || parseResults.scenes.length === 0) {
+                    throw new Error("স্ক্রিপ্ট থেকে কোনো দৃশ্য উদ্ধার করা সম্ভব হয়নি। অনুগ্রহ করে স্ক্রিপ্টটি পুনরায় চেক করুন।");
+                }
+
+                const totalScenes = parseResults.scenes.length;
+                logStatus(`সাফল্যের সাথে ${totalScenes}টি দৃশ্য পাওয়া গেছে। স্টোরিবোর্ড লেআউট তৈরি করা হচ্ছে...`);
+                updateProgress(20, `মোট ${totalScenes}টি দৃশ্যের লেআউট তৈরি হচ্ছে...`);
+
+                // Create placeholder UI for each scene
+                parseResults.scenes.forEach((scene, index) => {
+                    renderSceneCard(scene, index);
+                });
+
+                // Step 2: Iterate and generate images for each scene sequentially to maintain server bandwidth
+                const progressPerScene = 80 / totalScenes; // Remainder progress distributed over scenes
+
+                for (let i = 0; i < totalScenes; i++) {
+                    const scene = parseResults.scenes[i];
+                    const cardImg = document.getElementById(`scene-img-${i}`);
+                    const cardSpinner = document.getElementById(`scene-spinner-${i}`);
+                    const statusBadge = document.getElementById(`scene-status-${i}`);
+                    
+                    logStatus(`দৃশ্য ${i+1}/${totalScenes} ("${scene.title}") এর ছবি তৈরি শুরু হচ্ছে...`);
+                    statusBadge.textContent = "তৈরি হচ্ছে...";
+                    statusBadge.className = "text-[10px] uppercase font-bold text-indigo-400 animate-pulse";
+
+                    try {
+                        // Call Imagen API
+                        const imgDataUrl = await generateImageWithImagen(scene.visual_description, presetSuffix);
+                        
+                        // Render Image on Screen
+                        cardImg.src = imgDataUrl;
+                        cardImg.classList.remove('hidden');
+                        cardSpinner.classList.add('hidden');
+                        
+                        statusBadge.textContent = "সম্পন্ন";
+                        statusBadge.className = "text-[10px] uppercase font-bold text-emerald-400";
+                        logStatus(`দৃশ্য ${i+1} এর ছবি সফলভাবে সম্পন্ন হয়েছে।`);
+
+                        // Save image data along with metadata for zip creation
+                        generatedScenes.push({
+                            index: i,
+                            title: scene.title,
+                            text: scene.text,
+                            dataUrl: imgDataUrl,
+                            filename: sanitizeFilename(scene.title, i)
+                        });
+
+                    } catch (imageError) {
+                        console.error(`Error on Scene ${i+1}:`, imageError);
+                        
+                        // Fail fallback style
+                        cardSpinner.innerHTML = `
+                            <div class="text-rose-500 text-center px-4 space-y-1">
+                                <i class="fa-solid fa-image-blur text-3xl"></i>
+                                <p class="text-xs font-semibold">ছবি তৈরিতে সমস্যা হয়েছে</p>
+                            </div>
+                        `;
+                        statusBadge.textContent = "ব্যর্থ";
+                        statusBadge.className = "text-[10px] uppercase font-bold text-rose-500";
+                        
+                        logStatus(`ত্রুটি: দৃশ্য ${i+1} এর ছবি তৈরি করা সম্ভব হয়নি। পরবর্তী দৃশ্য নিয়ে কাজ চলছে...`);
+                        
+                        failedScenes.push({
+                            sceneNumber: i + 1,
+                            title: scene.title,
+                            error: imageError.message || "Imagen API connection failed"
+                        });
+                    }
+
+                    // Update scene dynamic progress
+                    const currentPct = Math.round(20 + (progressPerScene * (i + 1)));
+                    updateProgress(currentPct, `দৃশ্য ${i+1}/${totalScenes} প্রসেসিং সম্পন্ন`);
+                }
+
+                // Processing End Actions
+                updateProgress(100, "স্টোরিবোর্ড জেনারেশন সম্পন্ন হয়েছে!");
+                logStatus("সমস্ত সফল দৃশ্যের প্রসেস শেষ হয়েছে।");
+                
+                // If there are failures, show error panel listing the failed scenes
+                if (failedScenes.length > 0) {
+                    errorPanel.classList.remove('hidden');
+                    failedScenes.forEach(item => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>দৃশ্য ${item.sceneNumber}: ${item.title}</strong> - (${item.error})`;
+                        errorList.appendChild(li);
+                    });
+                }
+
+                // If at least some scenes were generated successfully, enable ZIP download
+                if (generatedScenes.length > 0) {
+                    downloadZipBtn.disabled = false;
+                    logStatus(`মোট ${generatedScenes.length}টি ছবির জিপ ফাইল তৈরির জন্য প্রস্তুত! ডাউনলোড বাটনে ক্লিক করুন।`);
+                } else {
+                    logStatus("দুঃখিত, কোনো দৃশ্যই সফলভাবে সম্পন্ন করা যায়নি।");
+                }
+
+            } catch (globalError) {
+                console.error("Global Error:", globalError);
+                logStatus(`মারাত্মক ত্রুটি: ${globalError.message}`);
+                statusTitle.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-500"></i> জেনারেশন ব্যর্থ হয়েছে`;
+                statusDesc.textContent = globalError.message || "একটি অজানা সার্ভার সমস্যা হয়েছে।";
+                
+                alertCustom(`ত্রুটি ঘটেছে: ${globalError.message || "সিস্টেম রেসপন্স পাওয়া যায়নি।"}`);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Storyboard`;
+            }
+        });
+
+        // Convert DataURL to Blob for zip creation
+        function dataURLtoBlob(dataUrl) {
+            const arr = dataUrl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], { type: mime });
+        }
+
+        // Handle ZIP Download Action
+        downloadZipBtn.addEventListener('click', async () => {
+            if (generatedScenes.length === 0) return;
+
+            downloadZipBtn.disabled = true;
+            downloadZipBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Zipping...`;
+
+            try {
+                const zip = new JSZip();
+                
+                // Add images to ZIP using the formatted file names
+                generatedScenes.forEach(scene => {
+                    const blob = dataURLtoBlob(scene.dataUrl);
+                    zip.file(scene.filename, blob);
+                });
+
+                // Also generate a simple text metadata inside ZIP detailing the story outline
+                let readmeContent = "AI Storyboard Generated Scenes Outline:\n====================================\n\n";
+                generatedScenes.forEach((scene, index) => {
+                    readmeContent += `[Scene ${index+1}] ${scene.title}\n`;
+                    readmeContent += `Description/Dialogue: ${scene.text}\n`;
+                    readmeContent += `Assigned Image File: ${scene.filename}\n\n`;
+                });
+                zip.file("readme_storyboard_outline.txt", readmeContent);
+
+                // Generate Zip File
+                const content = await zip.generateAsync({ type: "blob" });
+                
+                // Create browser download link & trigger download
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(content);
+                link.download = `storyboard_${new Date().toISOString().slice(0,10)}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                logStatus("সফলভাবে ZIP ফাইল ডাউনলোড করা হয়েছে!");
+            } catch (err) {
+                console.error("ZIP Generation error:", err);
+                alertCustom("জিপ ফাইল তৈরি করতে সমস্যা হয়েছে: " + err.message);
+            } finally {
+                downloadZipBtn.disabled = false;
+                downloadZipBtn.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Download ZIP`;
+            }
+        });
+
+        // Elegant custom message notification instead of default window.alert
+        function alertCustom(message) {
+            const modalHtml = `
+                <div id="customAlertModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full text-center space-y-4 shadow-2xl">
+                        <div class="mx-auto w-12 h-12 rounded-full bg-indigo-950 flex items-center justify-center text-indigo-400">
+                            <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-100">স্টোরিবোর্ড অ্যালার্ট</h3>
+                        <p class="text-sm text-slate-300 leading-relaxed">${message}</p>
+                        <button onclick="document.getElementById('customAlertModal').remove()" 
+                            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition shadow-lg shadow-indigo-600/20">
+                            ঠিক আছে
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+    </script>
+</body>
+</html>
+
