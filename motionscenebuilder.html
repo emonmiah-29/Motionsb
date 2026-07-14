@@ -1,0 +1,822 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AI Director Mobile Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Bengali & English) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Hind Siliguri', sans-serif;
+            background-color: #070a13;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        /* কাস্টম গ্লো ইফেক্ট */
+        .neon-border {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+        /* অ্যান্ড্রয়েড নেটিভ স্ক্রলবার হাইড */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden pb-safe">
+
+    <!-- অ্যান্ড্রয়েড নেটিভ স্টাইল টপ হেডার বার -->
+    <header class="bg-slate-900/95 border-b border-slate-800 px-4 py-4 sticky top-0 z-50 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center space-x-3">
+            <div class="bg-emerald-600 p-2.5 rounded-xl shadow-lg shadow-emerald-500/20">
+                <i class="fa-solid fa-robot text-lg text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-extrabold tracking-tight text-slate-100">AI Director Mobile</h1>
+                <p class="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    অ্যান্ড্রয়েড নেটিভ এক্সপোর্টার
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <!-- এপিআই কী সেটআপ বাটন -->
+            <button onclick="toggleModal('settings-modal')" class="p-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition rounded-xl text-slate-300 border border-slate-700">
+                <i class="fa-solid fa-key text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- প্রধান মোবাইল ওয়ার্কস্পেস -->
+    <main class="flex-1 p-4 flex flex-col space-y-5 max-w-md mx-auto w-full pb-20">
+        
+        <!-- ধাপ ১: স্ক্রিপ্ট রাইটিং প্যানেল -->
+        <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl space-y-3.5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs border border-emerald-500/30">১</span>
+                    <h3 class="font-bold text-slate-200 text-xs">আপনার গল্প লিখুন</h3>
+                </div>
+                <!-- অটো স্ক্রিপ্ট টেমপ্লেট ড্রপডাউন -->
+                <select id="template-select" onchange="loadTemplate()" class="bg-slate-800 border border-slate-700 text-[10px] font-bold rounded-lg px-2.5 py-1 text-slate-300 focus:outline-none">
+                    <option value="">টেমপ্লেট সিলেক্ট করুন...</option>
+                    <option value="sci-fi">সাই-ফাই নিয়ন সিটি</option>
+                    <option value="detective">ডিটেকটিভ রহস্যময় রাত</option>
+                    <option value="nature">শান্ত বনের নদীপথ</option>
+                    <option value="bengali">নদীর মাঝি ও পাল তোলা নৌকা</option>
+                </select>
+            </div>
+
+            <textarea id="script-input" rows="4" 
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 text-xs focus:outline-none focus:border-emerald-500 transition duration-200 resize-none placeholder-slate-600 leading-relaxed"
+                placeholder="এখানে আপনার চমৎকার গল্প বা দৃশ্যপটটি লিখুন (বাংলা অথবা ইংরেজি)..."></textarea>
+
+            <!-- এআই সিন জেনারেটর ট্রিগার -->
+            <button onclick="processScriptWithAI()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl font-bold text-xs transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>এআই দিয়ে ভিডিও জেনারেট করুন</span>
+            </button>
+        </div>
+
+        <!-- ধাপ ২: লাইভ প্রিভিউ এডিট স্ক্রিন -->
+        <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl space-y-4">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-play text-emerald-400"></i>
+                    ভিডিও প্লেব্যাক মনিটর
+                </span>
+                <span id="video-ratio-display" class="text-[10px] font-bold bg-slate-800 text-slate-400 px-2 py-0.5 rounded-md">
+                    YouTube Standard (16:9)
+                </span>
+            </div>
+
+            <!-- হার্ডওয়্যার এক্সিলারেটেড ক্যানভাস প্লেয়ার -->
+            <div class="relative bg-black rounded-xl overflow-hidden flex items-center justify-center border border-slate-800 aspect-video shadow-inner">
+                <canvas id="preview-canvas" class="w-full h-full object-contain pointer-events-none"></canvas>
+                
+                <!-- প্লেয়ার খালি থাকলে প্লেসহোল্ডার মেসেজ -->
+                <div id="player-placeholder" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-4 text-center">
+                    <div class="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 mb-2 border border-slate-800">
+                        <i class="fa-solid fa-video text-lg"></i>
+                    </div>
+                    <p class="text-[11px] text-slate-500">আপনার স্ক্রিপ্ট থেকে ভিডিও জেনারেট করার পর এখানে প্লে হবে</p>
+                </div>
+
+                <!-- স্মার্ট বাফারিং/লোডিং স্ক্রিন ওভারলে -->
+                <div id="player-loading-overlay" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 text-center hidden">
+                    <div class="w-10 h-10 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin mb-3"></div>
+                    <p class="text-xs text-emerald-400 font-bold" id="overlay-text">প্রক্রিয়াকরণ করা হচ্ছে...</p>
+                </div>
+            </div>
+
+            <!-- মোবাইল প্লেব্যাক ও শেয়ারিং হাব -->
+            <div class="space-y-3">
+                <!-- বেসিক মিডিয়া বাটনসমূহ -->
+                <div class="flex items-center justify-between bg-slate-950 border border-slate-800 p-2.5 rounded-xl">
+                    <div class="flex items-center space-x-2.5">
+                        <button onclick="playTimeline()" class="w-9 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center transition">
+                            <i class="fa-solid fa-play text-xs" id="play-icon"></i>
+                        </button>
+                        <button onclick="pauseTimeline()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 flex items-center justify-center transition border border-slate-700">
+                            <i class="fa-solid fa-pause text-xs"></i>
+                        </button>
+                        <button onclick="stopTimeline()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 flex items-center justify-center transition border border-slate-700">
+                            <i class="fa-solid fa-stop text-xs"></i>
+                        </button>
+                    </div>
+                    <span class="text-xs font-mono font-semibold text-slate-400 mr-1.5" id="playback-timer">00:00 / 00:00</span>
+                </div>
+
+                <!-- এপিকে স্পেশাল শেয়ারিং বাটন (CapCut ডিরেক্ট শেয়ার) -->
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="exportFinalVideo(false)" class="py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-700 transition">
+                        <i class="fa-solid fa-download"></i> গ্যালারিতে সেভ করুন
+                    </button>
+                    <button onclick="exportFinalVideo(true)" class="py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 active:scale-95 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 transition">
+                        <i class="fa-solid fa-share-nodes"></i> CapCut এ পাঠান
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ধাপ ৩: ইন্টারেক্টিভ দৃশ্য তালিকা -->
+        <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl space-y-3">
+            <h4 class="text-xs font-bold text-slate-400 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-emerald-400"></i>
+                ভিডিও সিন টাইমলাইন
+            </h4>
+            <div id="timeline-container" class="space-y-2 max-h-[160px] overflow-y-auto no-scrollbar">
+                <p class="text-center py-4 text-slate-600 text-xs">এখনো কোনো দৃশ্য তৈরি করা হয়নি।</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- পিক্সেলস কি কনফিগারেশন মডাল উইন্ডো -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/85 z-[100] backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="px-4 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                <span class="font-bold text-xs text-slate-300">Pexels Key Manager</span>
+                <button onclick="toggleModal('settings-modal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 space-y-3.5 text-xs">
+                <div class="space-y-1.5">
+                    <label class="block font-bold text-slate-400">Pexels API Key(s)</label>
+                    <textarea id="pexels-key" rows="3" placeholder="key1, key2, key3..." 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-emerald-500 font-mono resize-none leading-relaxed"></textarea>
+                    <p class="text-[9px] text-slate-500 leading-relaxed">একাধিক কি দিলে অ্যাপ স্বয়ংক্রিয়ভাবে একটির পর একটি ব্যবহার করে কোটা লিমিট এড়াবে।</p>
+                </div>
+                <button onclick="saveApiKeys()" class="w-full py-2.5 bg-emerald-600 text-white rounded-lg font-bold">সেভ করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- গ্লোবাল টোস্ট এলার্ট কন্টেইনার -->
+    <div id="toast-container" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[200] flex flex-col space-y-2.5 w-[90%] max-w-xs pointer-events-none"></div>
+
+    <!-- অ্যাপ রেন্ডারিং স্ট্যাটাস ইন্ডিকেটর -->
+    <div id="export-progress-modal" class="fixed inset-0 bg-black/90 z-[120] backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden p-6 text-center space-y-4 shadow-2xl">
+            <div class="relative w-16 h-16 mx-auto">
+                <div class="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-emerald-400" id="export-percentage">0%</div>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-200 text-sm">ভিডিও রেন্ডার করা হচ্ছে</h4>
+                <p class="text-[10px] text-slate-400 mt-1" id="export-status-label">ফ্রেম ডাটা প্রসেস করা হচ্ছে...</p>
+            </div>
+            <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
+                <div id="export-progress-bar" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+            <p class="text-[10px] text-amber-400 font-medium leading-relaxed">রিয়েল-টাইম এনকোড হচ্ছে। কোনো থ্রটলিং বা ল্যাগ ছাড়াই সঠিক সাইজের ভিডিও ফাইল রেন্ডার হবে।</p>
+        </div>
+    </div>
+
+    <!-- বটম স্ট্যাটাস বার -->
+    <footer class="bg-slate-950 border-t border-slate-800 py-3 text-center text-[10px] text-slate-600 fixed bottom-0 left-0 w-full z-40">
+        APK native sharing and file-system sandbox mode active
+    </footer>
+
+    <!-- কোড লজিক এবং ইঞ্জিন স্ক্রিপ্ট -->
+    <script>
+        const apiKey = ""; // গ্লোবাল সিকিউরড ট্র্যাকিং কি
+        let apiKeysLocal = { pexels: '' };
+        let pexelsKeyIndex = 0;
+
+        // ফাস্ট রেন্ডারিং এর জন্য কিউরেটেড ডাটাবেজ
+        const fallbackVideoCatalog = [
+            {
+                tags: ["cyberpunk", "city", "neon", "rain", "street", "car", "balcony", "night"],
+                url: "https://assets.mixkit.co/videos/preview/mixkit-neon-light-from-a-building-reflecting-in-rain-water-43187-large.mp4"
+            },
+            {
+                tags: ["forest", "nature", "green", "creek", "river", "sunlight", "stag", "water"],
+                url: "https://assets.mixkit.co/videos/preview/mixkit-clear-water-stream-in-a-forest-42289-large.mp4"
+            },
+            {
+                tags: ["detective", "alley", "dark", "crime", "police", "smoke", "trench"],
+                url: "https://assets.mixkit.co/videos/preview/mixkit-man-walking-in-a-dark-street-under-the-rain-43171-large.mp4"
+            },
+            {
+                tags: ["bengali", "boat", "river", "misty", "village", "peaceful", "sunset"],
+                url: "https://assets.mixkit.co/videos/preview/mixkit-sunset-over-a-calm-lake-42848-large.mp4"
+            },
+            {
+                tags: ["space", "universe", "stars", "planet", "galaxy", "sci-fi"],
+                url: "https://assets.mixkit.co/videos/preview/mixkit-spinning-around-in-space-under-a-starry-sky-43141-large.mp4"
+            }
+        ];
+
+        let generatedScenes = [];
+        let currentlyPlayingSceneIndex = 0;
+        let isPlaying = false;
+        let isExporting = false;
+        let playInterval = null;
+        let totalDuration = 0;
+        let currentTime = 0;
+        let loadedVideos = {}; 
+        let canvasElement = document.getElementById('preview-canvas');
+        let ctx = canvasElement.getContext('2d');
+        let mediaRecorder = null;
+        let recordedChunks = [];
+
+        window.addEventListener('load', () => {
+            const savedKeys = localStorage.getItem('ai_director_api_keys');
+            if (savedKeys) {
+                try {
+                    const parsed = JSON.parse(savedKeys);
+                    apiKeysLocal.pexels = parsed.pexels || '';
+                    document.getElementById('pexels-key').value = apiKeysLocal.pexels || '';
+                } catch(e) {
+                    apiKeysLocal.pexels = savedKeys;
+                    document.getElementById('pexels-key').value = savedKeys;
+                }
+            }
+            adjustCanvasResolution();
+            startAnimationLoop();
+        });
+
+        // কন্টিনিউয়াস প্লেব্যাক রেন্ডার এনিমেশন লুপ
+        function startAnimationLoop() {
+            function tick() {
+                if (generatedScenes.length > 0 && (isPlaying || isExporting)) {
+                    drawSceneFrame(currentlyPlayingSceneIndex);
+                }
+                requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        // টেমপ্লেট ডাটা লোডার
+        const templates = {
+            'sci-fi': "A traveler stands on a futuristic balcony overlooking a massive cyberpunk city. Glowing pink and neon blue holographic billboards fill the skyline. Floating transit crafts zip past massive towering structures. Rain softly drops on the neon pavement reflecting the futuristic light beams.",
+            'detective': "Heavy rain washes over a quiet dark city street at midnight. A single vintage black car sits parked under a flickering yellow street lamp. A detective dressed in a long trench coat and fedora stands under the alleyway, watching a lit window across the road. Smoke rises gracefully from a nearby manhole cover.",
+            'nature': "Sunlight filters through towering redwood pine trees onto a lush green forest floor covered with ferns. A crystal clear creek bubble flows gently over smooth, colorful river rocks. Golden particles drift magically through the misty morning air as a majestic stag raises its head at the peaceful sounds.",
+            'bengali': "একটি রহস্যময় কুয়াশাচ্ছন্ন গ্রামীন নদীপথ। সন্ধ্যার মৃদু সূর্য লালচে আভা ছড়াচ্ছে শান্ত নদীর জলের ওপর। দূর থেকে ভেসে আসছে বাঁশির সুর। একটি একাকী পাল তোলা নৌকা ধীরে ধীরে কুয়াশার ভেতর অদৃশ্য হয়ে যাচ্ছে।"
+        };
+
+        function loadTemplate() {
+            const templateKey = document.getElementById('template-select').value;
+            if (templateKey && templates[templateKey]) {
+                document.getElementById('script-input').value = templates[templateKey];
+                showToast("টেমপ্লেট স্ক্রিপ্ট লোড হয়েছে!", "info");
+            }
+        }
+
+        function toggleModal(modalId) {
+            const el = document.getElementById(modalId);
+            el.classList.toggle('hidden');
+        }
+
+        function saveApiKeys() {
+            apiKeysLocal.pexels = document.getElementById('pexels-key').value.trim();
+            localStorage.setItem('ai_director_api_keys', JSON.stringify(apiKeysLocal));
+            showToast("এপিআই কি সফলভাবে সংরক্ষিত!", "success");
+            toggleModal('settings-modal');
+        }
+
+        function getNextPexelsKey() {
+            if (!apiKeysLocal.pexels) return null;
+            const keys = apiKeysLocal.pexels.split(',').map(k => k.trim()).filter(k => k.length > 0);
+            if (keys.length === 0) return null;
+            const key = keys[pexelsKeyIndex];
+            pexelsKeyIndex = (pexelsKeyIndex + 1) % keys.length;
+            return key;
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-3 rounded-xl shadow-lg border text-center text-xs font-semibold text-white transition-all duration-300 transform translate-y-2 opacity-0`;
+            
+            const colors = {
+                success: "bg-emerald-950 border-emerald-500/30 text-emerald-300",
+                error: "bg-rose-950 border-rose-500/30 text-rose-300",
+                info: "bg-slate-900 border-slate-800 text-slate-300"
+            };
+            toast.className += ` ${colors[type] || colors.info}`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function adjustCanvasResolution() {
+            // অ্যান্ড্রয়েড প্রসেসরের ওপর প্রেশার কমাতে ৯৬০x৫৪০ রেজোলিউশন
+            canvasElement.width = 960;
+            canvasElement.height = 540;
+            drawInitialScreen();
+        }
+
+        function drawInitialScreen() {
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+            ctx.fillStyle = '#10b981';
+            ctx.font = 'bold 24px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText("AI VIDEO ENGINE READY", canvasElement.width / 2, canvasElement.height / 2);
+        }
+
+        // স্ক্রিপ্ট প্রসেসিং
+        async function processScriptWithAI() {
+            const scriptText = document.getElementById('script-input').value.trim();
+            if (!scriptText) {
+                showToast("অনুগ্রহ করে একটি স্ক্রিপ্ট দিন!", "error");
+                return;
+            }
+
+            document.getElementById('player-placeholder').classList.add('hidden');
+            const loadingOverlay = document.getElementById('player-loading-overlay');
+            loadingOverlay.classList.remove('hidden');
+            document.getElementById('overlay-text').textContent = "এআই দৃশ্য তৈরি করছে...";
+
+            const token = apiKey; 
+            const model = "gemini-2.5-flash-preview-09-2025";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${token}`;
+
+            const prompt = `Analyze the script provided and divide it into sequential visual scenes.
+            Output JSON containing 'scenes' array with fields 'sceneNumber', 'narration', 'duration' (4 to 6 seconds), and 'searchKeywords' (English).
+            Script: "${scriptText}"`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            scenes: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        sceneNumber: { type: "INTEGER" },
+                                        narration: { type: "STRING" },
+                                        duration: { type: "INTEGER" },
+                                        searchKeywords: { type: "STRING" }
+                                    },
+                                    required: ["sceneNumber", "narration", "duration", "searchKeywords"]
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(res => res.json());
+
+                const rawText = response.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawText) throw new Error("API Parser failure.");
+                
+                generatedScenes = JSON.parse(rawText).scenes;
+
+                document.getElementById('overlay-text').textContent = "স্টক ভিডিও সিঙ্ক করা হচ্ছে...";
+                await downloadAndCacheVideos();
+
+                loadingOverlay.classList.add('hidden');
+                buildTimelineUI();
+                selectScene(0);
+
+            } catch (err) {
+                console.error(err);
+                // ফেইলসেফ অফলাইন সিন জেনারেটর (যদি এপিআই ওভারলোড হয়)
+                generatedScenes = [
+                    { sceneNumber: 1, narration: "Visual Scene Setup", duration: 5, searchKeywords: "nature forest creek stream" },
+                    { sceneNumber: 2, narration: "Visual Progress Journey", duration: 5, searchKeywords: "cyberpunk city rain street" }
+                ];
+                await downloadAndCacheVideos();
+                loadingOverlay.classList.add('hidden');
+                buildTimelineUI();
+                selectScene(0);
+            }
+        }
+
+        // ভিডিও ক্যাশিং আর্কিটেকচার (CORS বাইপাস ও বাফারিং ল্যাগ রিমুভার)
+        async function downloadAndCacheVideos() {
+            for (let i = 0; i < generatedScenes.length; i++) {
+                const scene = generatedScenes[i];
+                const keywords = (scene.searchKeywords || "cinematic view").toLowerCase();
+                let mediaUrl = "";
+
+                const pexelsKey = getNextPexelsKey();
+                if (pexelsKey) {
+                    try {
+                        const searchUrl = `https://api.pexels.com/videos/search?query=${encodeURIComponent(keywords)}&per_page=3`;
+                        const res = await fetch(searchUrl, { headers: { 'Authorization': pexelsKey } }).then(r => r.json());
+                        if (res.videos && res.videos.length > 0) {
+                            const files = res.videos[0].video_files;
+                            // মোবাইল স্ক্রিনের জন্য অপ্টিমাইজড রেজোলিউশন ফিল্টার
+                            const idealFile = files.find(f => f.width <= 960 && f.file_type === "video/mp4") || files[0];
+                            mediaUrl = idealFile.link;
+                        }
+                    } catch (e) {
+                        console.warn(e);
+                    }
+                }
+
+                if (!mediaUrl) {
+                    let matched = fallbackVideoCatalog[0];
+                    for (const item of fallbackVideoCatalog) {
+                        if (item.tags.some(tag => keywords.includes(tag))) {
+                            matched = item;
+                            break;
+                        }
+                    }
+                    mediaUrl = matched.url;
+                }
+
+                scene.mediaUrl = mediaUrl;
+                scene.mediaType = "video";
+
+                // ভিডিও প্রি-লোডার (সরাসরি এলিমেন্ট ড্রইং)
+                if (!loadedVideos[mediaUrl]) {
+                    const videoEl = document.createElement('video');
+                    videoEl.src = mediaUrl;
+                    videoEl.preload = "auto";
+                    videoEl.loop = true;
+                    videoEl.muted = true;
+                    videoEl.playsInline = true;
+                    videoEl.crossOrigin = "anonymous"; // অ্যান্ড্রয়েড এপিকে তে CORS বাইপাস করার জন্য
+                    videoEl.load();
+                    loadedVideos[mediaUrl] = videoEl;
+                }
+            }
+        }
+
+        function buildTimelineUI() {
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = '';
+            totalDuration = 0;
+
+            generatedScenes.forEach((scene, index) => {
+                totalDuration += parseInt(scene.duration);
+                const sceneDiv = document.createElement('div');
+                sceneDiv.className = `p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/60 cursor-pointer transition flex items-center justify-between`;
+                sceneDiv.setAttribute('id', `scene-card-${index}`);
+                sceneDiv.setAttribute('onclick', `selectScene(${index})`);
+
+                sceneDiv.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-square-poll-horizontal text-emerald-400 text-sm"></i>
+                        <div>
+                            <p class="text-xs font-bold text-slate-200">দৃশ্য ${index + 1} (${scene.duration} সেকেন্ড)</p>
+                            <p class="text-[10px] text-slate-500 line-clamp-1">${scene.narration}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2" onclick="event.stopPropagation()">
+                        <button onclick="editSceneContent(${index})" class="text-slate-400 hover:text-white text-xs p-1"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="removeScene(${index})" class="text-slate-500 hover:text-rose-400 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(sceneDiv);
+            });
+            updatePlaybackTimer();
+        }
+
+        function selectScene(index) {
+            if (index < 0 || index >= generatedScenes.length) return;
+            currentlyPlayingSceneIndex = index;
+            
+            for (let i = 0; i < generatedScenes.length; i++) {
+                const el = document.getElementById(`scene-card-${i}`);
+                if (el) {
+                    if (i === index) {
+                        el.className = 'p-3.5 rounded-xl border border-emerald-500 bg-emerald-500/10 cursor-pointer transition flex items-center justify-between';
+                    } else {
+                        el.className = 'p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/60 cursor-pointer transition flex items-center justify-between';
+                    }
+                }
+            }
+
+            const activeScene = generatedScenes[index];
+            const activeVideo = loadedVideos[activeScene.mediaUrl];
+            if (activeVideo) {
+                Object.values(loadedVideos).forEach(vid => {
+                    if (vid !== activeVideo) vid.pause();
+                });
+                
+                if (isPlaying || isExporting) {
+                    activeVideo.play().catch(e => console.warn(e));
+                } else {
+                    activeVideo.currentTime = 0;
+                    activeVideo.pause();
+                }
+            }
+            drawSceneFrame(index);
+        }
+
+        function removeScene(index) {
+            generatedScenes.splice(index, 1);
+            if (currentlyPlayingSceneIndex >= generatedScenes.length) {
+                currentlyPlayingSceneIndex = Math.max(0, generatedScenes.length - 1);
+            }
+            buildTimelineUI();
+            selectScene(currentlyPlayingSceneIndex);
+            showToast("দৃশ্য সরানো হয়েছে!", "info");
+        }
+
+        function editSceneContent(index) {
+            const scene = generatedScenes[index];
+            const newNarration = prompt("দৃশ্যের বিবরণ এডিট করুন:", scene.narration);
+            if (newNarration !== null) {
+                scene.narration = newNarration;
+                buildTimelineUI();
+                selectScene(index);
+            }
+        }
+
+        function addNewScene() {
+            const newScene = {
+                sceneNumber: generatedScenes.length + 1,
+                narration: "নতুন দৃশ্যপট",
+                duration: 5,
+                searchKeywords: "space travel spaceship void",
+                mediaType: "video",
+                mediaUrl: fallbackVideoCatalog[4].url
+            };
+
+            if (!loadedVideos[newScene.mediaUrl]) {
+                const videoEl = document.createElement('video');
+                videoEl.src = newScene.mediaUrl;
+                videoEl.preload = "auto";
+                videoEl.loop = true;
+                videoEl.muted = true;
+                videoEl.playsInline = true;
+                videoEl.crossOrigin = "anonymous";
+                videoEl.load();
+                loadedVideos[newScene.mediaUrl] = videoEl;
+            }
+
+            generatedScenes.push(newScene);
+            buildTimelineUI();
+            selectScene(generatedScenes.length - 1);
+            showToast("নতুন দৃশ্য যোগ করা হয়েছে!", "success");
+        }
+
+        // ক্যানভাসে ড্র করার ফাস্ট রুটিন
+        function drawSceneFrame(index) {
+            if (!generatedScenes[index]) return;
+            const scene = generatedScenes[index];
+            const activeVideo = loadedVideos[scene.mediaUrl];
+
+            ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            if (activeVideo && activeVideo.readyState >= 2) {
+                const videoRatio = activeVideo.videoWidth / activeVideo.videoHeight;
+                const canvasRatio = canvasElement.width / canvasElement.height;
+                let drawWidth, drawHeight, xStart, yStart;
+
+                if (videoRatio > canvasRatio) {
+                    drawHeight = canvasElement.height;
+                    drawWidth = canvasElement.height * videoRatio;
+                    xStart = (canvasElement.width - drawWidth) / 2;
+                    yStart = 0;
+                } else {
+                    drawWidth = canvasElement.width;
+                    drawHeight = canvasElement.width / videoRatio;
+                    xStart = 0;
+                    yStart = (canvasElement.height - drawHeight) / 2;
+                }
+
+                ctx.drawImage(activeVideo, xStart, yStart, drawWidth, drawHeight);
+            } else {
+                ctx.fillStyle = '#020617';
+                ctx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+                ctx.fillStyle = '#10b981';
+                ctx.font = '14px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText("ভিডিও বাফারিং...", canvasElement.width / 2, canvasElement.height / 2);
+            }
+        }
+
+        function playTimeline() {
+            if (generatedScenes.length === 0) return;
+            if (isPlaying) return;
+
+            isPlaying = true;
+            document.getElementById('play-icon').className = "fa-solid fa-sync fa-spin text-xs";
+            
+            let startTime = Date.now() - (currentTime * 1000);
+
+            const activeVideo = loadedVideos[generatedScenes[currentlyPlayingSceneIndex].mediaUrl];
+            if (activeVideo) {
+                activeVideo.play().catch(e => console.warn(e));
+            }
+
+            playInterval = setInterval(() => {
+                let elapsed = (Date.now() - startTime) / 1000;
+                currentTime = elapsed;
+
+                let tempSum = 0;
+                let activeIndex = 0;
+                for (let i = 0; i < generatedScenes.length; i++) {
+                    tempSum += generatedScenes[i].duration;
+                    if (elapsed < tempSum) {
+                        activeIndex = i;
+                        break;
+                    }
+                }
+
+                if (activeIndex !== currentlyPlayingSceneIndex) {
+                    currentlyPlayingSceneIndex = activeIndex;
+                    selectScene(currentlyPlayingSceneIndex);
+                }
+
+                updatePlaybackTimer();
+
+                if (elapsed >= totalDuration) {
+                    stopTimeline();
+                }
+
+            }, 33);
+        }
+
+        function pauseTimeline() {
+            isPlaying = false;
+            clearInterval(playInterval);
+            document.getElementById('play-icon').className = "fa-solid fa-play text-xs";
+            Object.values(loadedVideos).forEach(vid => vid.pause());
+        }
+
+        function stopTimeline() {
+            pauseTimeline();
+            currentTime = 0;
+            currentlyPlayingSceneIndex = 0;
+            selectScene(0);
+            updatePlaybackTimer();
+        }
+
+        function updatePlaybackTimer() {
+            const formatTime = (sec) => {
+                const m = Math.floor(sec / 60).toString().padStart(2, '0');
+                const s = Math.floor(sec % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            };
+            document.getElementById('playback-timer').textContent = `${formatTime(currentTime)} / ${formatTime(totalDuration)}`;
+        }
+
+        // এপিকে এক্সপোর্টার ইঞ্জিন (CapCut এবং শেয়ার অপ্টিমাইজড)
+        async function exportFinalVideo(isSharingToCapCut = false) {
+            if (generatedScenes.length === 0) {
+                showToast("আগে সিন তৈরি করুন!", "error");
+                return;
+            }
+
+            stopTimeline();
+            isExporting = true;
+
+            const exportModal = document.getElementById('export-progress-modal');
+            const percentLabel = document.getElementById('export-percentage');
+            const statusLabel = document.getElementById('export-status-label');
+            const progressBar = document.getElementById('export-progress-bar');
+
+            exportModal.classList.remove('hidden');
+            percentLabel.textContent = "0%";
+            progressBar.style.width = "0%";
+            statusLabel.textContent = "ভিডিও প্রসেসিং শুরু হচ্ছে...";
+
+            // ক্যাশড মিডিয়া ক্যানভাস থেকে ফ্রেম-বাই-ফ্রেম ক্যাপচার
+            const canvasStream = canvasElement.captureStream(30); 
+            const options = { 
+                mimeType: 'video/webm; codecs=vp9',
+                videoBitsPerSecond: 6000000 // মোবাইল জিপিইউ ফ্রেন্ডলি ৬ এমবিপিএস
+            };
+            recordedChunks = [];
+            
+            try {
+                mediaRecorder = new MediaRecorder(canvasStream, options);
+            } catch (e) {
+                mediaRecorder = new MediaRecorder(canvasStream, { videoBitsPerSecond: 4000000 });
+            }
+
+            mediaRecorder.ondataavailable = function(e) {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = async function() {
+                const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                
+                if (isSharingToCapCut) {
+                    // অ্যান্ড্রোয়েড শেয়ার শিট ট্রিগার (যার মাধ্যমে CapCut এ সরাসরি ভিডিও ট্রান্সফার হবে)
+                    if (navigator.share) {
+                        try {
+                            const file = new File([videoBlob], "ai_director_raw.mp4", { type: "video/mp4" });
+                            await navigator.share({
+                                files: [file],
+                                title: "AI Video",
+                                text: "Importing video to editing software..."
+                            });
+                            showToast("CapCut শেয়ারিং সফল হয়েছে!", "success");
+                        } catch (err) {
+                            console.error("Sharing error: ", err);
+                            triggerLocalDownload(videoBlob);
+                        }
+                    } else {
+                        showToast("সরাসরি শেয়ার সিস্টেম সাপোর্টেড নয়, ডাউনলোড করা হয়েছে!", "error");
+                        triggerLocalDownload(videoBlob);
+                    }
+                } else {
+                    triggerLocalDownload(videoBlob);
+                }
+
+                exportModal.classList.add('hidden');
+                isExporting = false;
+                stopTimeline();
+            };
+
+            mediaRecorder.start();
+
+            let startTime = Date.now();
+            currentlyPlayingSceneIndex = 0;
+            selectScene(0);
+
+            const activeVideo = loadedVideos[generatedScenes[0].mediaUrl];
+            if (activeVideo) {
+                activeVideo.currentTime = 0;
+                activeVideo.play().catch(e => console.warn(e));
+            }
+
+            let exportInterval = setInterval(() => {
+                let elapsed = (Date.now() - startTime) / 1000;
+                let progress = Math.min(100, (elapsed / totalDuration) * 100);
+
+                percentLabel.textContent = `${Math.floor(progress)}%`;
+                progressBar.style.width = `${progress}%`;
+                statusLabel.textContent = `ফ্রেম এনকোডিং: ${Math.floor(elapsed)}s / ${Math.floor(totalDuration)}s`;
+
+                let tempSum = 0;
+                let activeIndex = 0;
+                for (let i = 0; i < generatedScenes.length; i++) {
+                    tempSum += generatedScenes[i].duration;
+                    if (elapsed < tempSum) {
+                        activeIndex = i;
+                        break;
+                    }
+                }
+
+                if (activeIndex !== currentlyPlayingSceneIndex) {
+                    currentlyPlayingSceneIndex = activeIndex;
+                    selectScene(currentlyPlayingSceneIndex);
+                }
+
+                if (elapsed >= totalDuration) {
+                    clearInterval(exportInterval);
+                    mediaRecorder.stop();
+                    Object.values(loadedVideos).forEach(vid => vid.pause());
+                }
+            }, 33);
+        }
+
+        function triggerLocalDownload(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ai_director_render.webm';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
+
+```
